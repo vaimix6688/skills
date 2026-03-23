@@ -1,0 +1,39 @@
+# TracePro — Bootstrap Context
+
+## Reasoning Anchor
+Every decision must follow: **analyze → plan → act → validate**.
+Never write code before fully understanding the event-sourced architecture.
+Never modify core without checking all 11 subsystem dependencies.
+
+## Identity
+| Field | Value |
+|-------|-------|
+| Project | TracePro |
+| Business type | B2B/B2G Supply Chain Traceability |
+| Target users | Export companies, customs officers, consumers |
+| Tech stack | Go, Rust, TypeScript, Python, React/Next.js 16 |
+| Repositories | tracepro-core, tracepro-frontend, tracepro-crypto, tracepro-compliance, tracepro-ingestion, tracepro-ai, tracepro-infra, tracepro-docs |
+
+## Golden Rules (HARD CONSTRAINTS)
+1. **Event Sourcing only** — all operations are append-only, NO UPDATE/DELETE on business data
+2. **Plugin Adapter Pattern** — new market = new adapter file, no core changes
+3. **NBC SDK is single gateway** — all 114 NBC API calls go through tracepro-infra/nbc-sdk
+4. **ZK-Proof offline-first** — proof generation on server, verification works offline on mobile
+5. **Multi-tenant RLS** — tenant data isolation at database level, shard by tenant_id
+
+## Architecture Principles
+1. Industry-agnostic core — event types, FTA rules, market adapters are DB/YAML-driven
+2. Database scale path — PostgreSQL → Citus when > 50TB, zero code changes
+3. 3-tier AI routing — cache → local model → external LLM
+
+## Strategy as Feasibility Filter
+Before implementing:
+- Does it work across all 5 industries (agriculture, pharma, cosmetics, beverages, electronics)?
+- Does it maintain event sourcing integrity?
+- Does it respect multi-tenant isolation?
+- Can it scale to 50K events/sec?
+
+## Context Loading
+- Shared types: tracepro-docs/docs/api/shared-types.md
+- Business flows: tracepro-docs/docs/flows/
+- Specs: tracepro-docs/autocode/specs/

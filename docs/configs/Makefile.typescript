@@ -1,0 +1,33 @@
+# =============================================================================
+# Project — TypeScript Makefile (myproject-infra, myproject-frontend)
+# Master copy: myproject-docs/docs/configs/Makefile.typescript
+# =============================================================================
+
+.PHONY: dev build test lint fmt typecheck clean setup
+
+setup:
+	pnpm install
+	cp -n .env.example .env 2>/dev/null || true
+	@echo "Setup complete. Edit .env with your values."
+
+dev:
+	pnpm run dev
+
+build:
+	pnpm run build
+
+test:
+	pnpm run test
+
+lint:
+	pnpm run lint
+
+fmt:
+	pnpm exec prettier --write "**/*.{ts,tsx,json,yaml,md}"
+
+typecheck:
+	pnpm run typecheck
+
+clean:
+	rm -rf node_modules dist .next .turbo
+	pnpm store prune

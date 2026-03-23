@@ -1,0 +1,40 @@
+{
+  "output": {
+    "filePath": ".repomix-output.xml",
+    "style": "xml",
+    "removeComments": false,
+    "removeEmptyLines": true,
+    "topFilesLength": 10,
+    "showLineNumbers": true
+  },
+  "include": [
+    "src/**",
+    "lib/**",
+    "apps/**",
+    "packages/**",
+    "cmd/**",
+    "internal/**"
+  ],
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "node_modules/**",
+      "dist/**",
+      "build/**",
+      ".next/**",
+      "target/**",
+      "__pycache__/**",
+      "*.lock",
+      "*.min.js",
+      "*.min.css",
+      "*.map",
+      "*.wasm",
+      "*.pb.go",
+      "vendor/**"
+    ]
+  },
+  "security": {
+    "enableSecurityCheck": true
+  }
+}

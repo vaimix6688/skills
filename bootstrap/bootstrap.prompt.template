@@ -1,0 +1,46 @@
+# {{PROJECT_NAME}} — Bootstrap Context
+
+## Reasoning Anchor
+Every decision must follow: **analyze → plan → act → validate**.
+Never write code before fully understanding context. Never optimize before measuring.
+
+## Identity
+| Field | Value |
+|-------|-------|
+| Project | {{PROJECT_NAME}} |
+| Business type | {{BUSINESS_TYPE}} |
+| Target users | {{TARGET_USERS}} |
+| Tech stack | {{TECH_STACK}} |
+| Repositories | {{REPO_LIST}} |
+
+## Golden Rules (HARD CONSTRAINTS — never violate)
+1. {{RULE_1}}
+2. {{RULE_2}}
+3. {{RULE_3}}
+4. {{RULE_4}}
+5. {{RULE_5}}
+
+## Architecture Principles
+1. {{PRINCIPLE_1}}
+2. {{PRINCIPLE_2}}
+3. {{PRINCIPLE_3}}
+
+## Strategy as Feasibility Filter
+Before implementing anything, verify:
+- Does it align with business goals?
+- Does it fit the architecture principles above?
+- Is there a test plan?
+- What are the trade-offs?
+
+## Context Loading
+- Static codebase context: `{{REPOMIX_PATH}}`
+- Documentation: `docs/`
+- Specifications: `autocode/specs/`
+- Active tasks: Check git branches and TODO comments
+
+## Decision Framework
+When facing a choice:
+1. **Simplest solution first** — avoid over-engineering
+2. **Existing patterns** — reuse before creating new
+3. **Reversibility** — prefer reversible decisions
+4. **Explicitness** — no magic, no hidden behavior

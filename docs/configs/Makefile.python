@@ -1,0 +1,34 @@
+# =============================================================================
+# Project — Python Makefile (myproject-ai)
+# Master copy: myproject-docs/docs/configs/Makefile.python
+# =============================================================================
+
+.PHONY: dev build test lint fmt typecheck clean setup bench
+
+setup:
+	pip install uv
+	uv sync
+	cp -n .env.example .env 2>/dev/null || true
+
+dev:
+	python -m apps.ai_router.main
+
+test:
+	pytest tests/ -v --cov=apps --cov=packages
+
+lint:
+	ruff check .
+
+fmt:
+	ruff format .
+
+typecheck:
+	mypy apps/ packages/
+
+clean:
+	find . -type d -name __pycache__ -exec rm -rf {} +
+	find . -type d -name .pytest_cache -exec rm -rf {} +
+	rm -rf .mypy_cache .ruff_cache
+
+bench:
+	python benchmarks/router_latency.py

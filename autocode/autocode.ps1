@@ -1,0 +1,122 @@
+# =============================================================================
+# AutoCode — PowerShell (Windows)
+# Usage: .\autocode.ps1 [spec-file]
+# Example: .\autocode.ps1 spec.md
+# =============================================================================
+
+param(
+    [string]$SpecFile = "spec.md",
+    [int]$MaxTurns = 0
+)
+
+$ErrorActionPreference = "Stop"
+
+# --- Load configuration ---
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ConfigFile = Join-Path $ScriptDir "autocode.config"
+$ProjectName = "MyProject"
+$ProjectRoot = Split-Path -Parent $ScriptDir
+
+if (Test-Path $ConfigFile) {
+    Get-Content $ConfigFile | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -and -not $line.StartsWith("#")) {
+            $parts = $line -split "=", 2
+            if ($parts.Count -eq 2) {
+                $key = $parts[0].Trim()
+                $val = $parts[1].Trim()
+                switch ($key) {
+                    "PROJECT_NAME"  { $ProjectName = $val }
+                    "PROJECT_ROOT"  { $ProjectRoot = $val }
+                    "MAX_TURNS"     { if ($MaxTurns -eq 0) { $MaxTurns = [int]$val } }
+                }
+            }
+        }
+    }
+}
+
+if ($MaxTurns -eq 0) { $MaxTurns = 200 }
+
+if (-not (Test-Path $SpecFile)) {
+    Write-Host "ERROR: $SpecFile not found in $(Get-Location)" -ForegroundColor Red
+    Write-Host "Usage: .\autocode.ps1 [spec-file]"
+    exit 1
+}
+
+$SpecContent = Get-Content $SpecFile -Raw
+
+Write-Host "================================================" -ForegroundColor Cyan
+Write-Host "  $ProjectName AutoCode (PowerShell)" -ForegroundColor Cyan
+Write-Host "================================================" -ForegroundColor Cyan
+Write-Host "  Spec: $SpecFile"
+Write-Host "  Dir:  $(Get-Location)"
+Write-Host "  Time: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+Write-Host "  Max:  $MaxTurns turns"
+Write-Host "================================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Launching Claude Code in autonomous mode..." -ForegroundColor Yellow
+Write-Host ""
+
+$Prompt = @"
+AUTONOMOUS MODE — DO NOT ASK FOR PERMISSION.
+
+You are operating in FULLY AUTONOMOUS mode. Read the spec below and execute the complete coding loop WITHOUT stopping to ask questions.
+
+## YOUR LOOP (repeat until all tests PASS):
+
+### Step 1: ANALYZE
+- Read the spec carefully
+- Identify all modules, files, and tests needed
+- Read existing code in the repo to understand patterns
+
+### Step 2: CODE
+- Write ALL code specified in the spec
+- Follow existing patterns in the repo
+- Use proper error handling, logging, types
+
+### Step 3: TEST
+- Write unit tests for EVERY business rule in the spec
+- Run the test command specified in the DoD section
+- Capture the full output
+
+### Step 4: EVALUATE
+- If ALL tests PASS (exit code 0) -> go to Step 5
+- If ANY test FAILS -> read the error, fix the code, go back to Step 3
+- Maximum retries: 10
+
+### Step 5: LINT & BUILD
+- Run lint command from DoD
+- Run build command from DoD
+- If either fails -> fix and retry
+
+### Step 6: COMMIT
+- git add only the files you created/modified
+- git commit with descriptive message
+- Print "AUTOCODE COMPLETE" as the final output
+
+## CRITICAL RULES:
+- NEVER stop to ask questions — make reasonable decisions
+- NEVER skip writing tests — every business rule needs a test
+- If a dependency is missing, install it
+- Commit after EACH module succeeds (checkpoint commits)
+
+## SPEC:
+
+$SpecContent
+"@
+
+claude --print --dangerously-skip-permissions --max-turns $MaxTurns $Prompt
+
+$ExitCode = $LASTEXITCODE
+
+Write-Host ""
+Write-Host "================================================" -ForegroundColor Cyan
+if ($ExitCode -eq 0) {
+    Write-Host "  DONE - AutoCode completed successfully" -ForegroundColor Green
+} else {
+    Write-Host "  FAIL - AutoCode exited with code $ExitCode" -ForegroundColor Red
+}
+Write-Host "  Finished: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+Write-Host "================================================" -ForegroundColor Cyan
+
+exit $ExitCode

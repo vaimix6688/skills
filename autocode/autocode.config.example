@@ -1,0 +1,36 @@
+# ============================================
+# AutoCode Configuration
+# Copy this file to autocode.config and customize
+# ============================================
+
+# Project Configuration
+PROJECT_NAME=MyProject
+PROJECT_ROOT=/path/to/repos
+
+# Repository Map (key=short_name, value=folder_name)
+# Add entries for each repo in your project
+REPO_MAP_core=myproject-core
+REPO_MAP_frontend=myproject-frontend
+REPO_MAP_infra=myproject-infra
+# REPO_MAP_crypto=myproject-crypto
+# REPO_MAP_compliance=myproject-compliance
+# REPO_MAP_ingestion=myproject-ingestion
+# REPO_MAP_ai=myproject-ai
+# REPO_MAP_docs=myproject-docs
+
+# AutoCode Settings
+DEFAULT_AGENT=engineering-senior-developer
+MAX_TURNS=200
+MAX_RETRIES=10
+MAX_COST_USD=10
+DOCKER_SANDBOX=false
+
+# Integration
+REPOMIX_ENABLED=false
+REPOMIX_OUTPUT=.repomix-output.xml
+HEADROOM_ENABLED=false
+HEADROOM_PORT=8080
+
+# Logging
+LOG_DIR=autocode/logs
+LOG_LEVEL=info

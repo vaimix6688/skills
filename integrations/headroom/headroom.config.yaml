@@ -1,0 +1,22 @@
+# Headroom Configuration
+# Dynamic context compression for AI coding tools
+
+proxy:
+  port: 8080
+  target: https://api.anthropic.com
+
+compression:
+  tool_output: true
+  conversation_history: true
+  json_responses: true
+  images: true
+  min_size_bytes: 1024
+
+learning:
+  enabled: true
+  memory_file: .claude/memory/MEMORY.md
+  pattern_retention: 30d
+
+monitoring:
+  log_savings: true
+  stats_file: .headroom-stats.json

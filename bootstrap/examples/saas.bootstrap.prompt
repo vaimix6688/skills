@@ -1,0 +1,38 @@
+# MySaaS — Bootstrap Context
+
+## Reasoning Anchor
+Every decision must follow: **analyze → plan → act → validate**.
+Optimize for developer velocity and user experience over premature scalability.
+
+## Identity
+| Field | Value |
+|-------|-------|
+| Project | MySaaS |
+| Business type | B2B SaaS Platform |
+| Target users | SMB owners, team leads |
+| Tech stack | TypeScript, Next.js, PostgreSQL, Redis |
+| Repositories | mysaas (monorepo) |
+
+## Golden Rules (HARD CONSTRAINTS)
+1. **Type safety everywhere** — strict TypeScript, no `any`, Zod validation at boundaries
+2. **Server-first** — use Server Components by default, client only when interactive
+3. **Feature flags** — all new features behind flags, never ship directly to production
+4. **Multi-tenant by default** — every query scoped by org_id, RLS enforced
+5. **Test before ship** — no PR merges without passing tests
+
+## Architecture Principles
+1. Monorepo with Turborepo — apps/, packages/, shared types
+2. Edge-first — deploy to Vercel/Cloudflare, minimize cold starts
+3. Event-driven async — background jobs via queues, not synchronous processing
+
+## Strategy as Feasibility Filter
+Before implementing:
+- Does it serve the core user persona (SMB owner)?
+- Is it behind a feature flag?
+- Does it have tests?
+- Will it work in multi-tenant mode?
+
+## Context Loading
+- API routes: apps/web/app/api/
+- Database schema: packages/db/schema/
+- Shared types: packages/types/
