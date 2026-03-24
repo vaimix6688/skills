@@ -4,7 +4,7 @@
 
 This is a **reusable skills framework** for AI-augmented software development. It provides:
 
-- **25 Claude Code skills** — specialized AI agent personas for every development role
+- **26 Claude Code skills** — specialized AI agent personas for every development role
 - **AutoCode system** — spec-driven autonomous code generation with self-healing loops
 - **Bootstrap prompt system** — one-time context loading for token efficiency
 - **Development lifecycle templates** — guidelines, CI/CD, configs, runbooks
@@ -48,7 +48,7 @@ skills/
     └── checklist/                # Software dev lifecycle checklist
 ```
 
-## Skills Catalog (24 skills)
+## Skills Catalog (25 skills)
 
 ### Engineering (11)
 | Skill | Purpose |
@@ -80,6 +80,11 @@ skills/
 | `blockchain-security-auditor` | ZK proofs, blockchain security |
 | `agents-orchestrator` | Multi-agent coordination |
 | `specialized-workflow-architect` | Business process automation |
+
+### Audit (1)
+| Skill | Purpose |
+|-------|---------|
+| `saas-project-auditor` | Full-stack SaaS project audit, feature inventory, gaps, launch roadmap |
 
 ### Meta Skills (6)
 | Skill | Purpose |

@@ -6,7 +6,7 @@ Curated agent personas from [agency-agents](https://github.com/msitarzewski/agen
 
 These skills are available as Claude Code slash commands when working in this repository. Each provides specialized expertise for a specific development role.
 
-## Included Agents (24)
+## Included Agents (25)
 
 ### Engineering (11)
 | Agent | Use for |
@@ -38,6 +38,11 @@ These skills are available as Claude Code slash commands when working in this re
 | `blockchain-security-auditor` | ZK circuits, blockchain security review |
 | `agents-orchestrator` | Multi-agent project coordination |
 | `specialized-workflow-architect` | Business process automation |
+
+### Audit (1)
+| Agent | Use for |
+|-------|---------|
+| `saas-project-auditor` | Full-stack SaaS project audit: feature inventory, security gaps, infra readiness, strategic GTM |
 
 ### Meta Skills (6)
 | Agent | Use for |
