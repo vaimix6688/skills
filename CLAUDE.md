@@ -4,7 +4,7 @@
 
 This is a **reusable skills framework** for AI-augmented software development. It provides:
 
-- **26 Claude Code skills** — specialized AI agent personas for every development role
+- **28 Claude Code skills** — specialized AI agent personas for every development role
 - **AutoCode system** — spec-driven autonomous code generation with self-healing loops
 - **Bootstrap prompt system** — one-time context loading for token efficiency
 - **Development lifecycle templates** — guidelines, CI/CD, configs, runbooks
@@ -48,7 +48,7 @@ skills/
     └── checklist/                # Software dev lifecycle checklist
 ```
 
-## Skills Catalog (25 skills)
+## Skills Catalog (27 skills)
 
 ### Engineering (11)
 | Skill | Purpose |
@@ -81,12 +81,17 @@ skills/
 | `agents-orchestrator` | Multi-agent coordination |
 | `specialized-workflow-architect` | Business process automation |
 
+### Research (1)
+| Skill | Purpose |
+|-------|---------|
+| `deep-research` | Multi-angle web research (4-phase: Broad → Deep → Diversity → Synthesis) |
+
 ### Audit (1)
 | Skill | Purpose |
 |-------|---------|
 | `saas-project-auditor` | Full-stack SaaS project audit, feature inventory, gaps, launch roadmap |
 
-### Meta Skills (6)
+### Meta Skills (7)
 | Skill | Purpose |
 |-------|---------|
 | `business-analyst` | PRD, user stories, business rules, personas, journey maps |
@@ -94,6 +99,7 @@ skills/
 | `bootstrap-architect` | Create/maintain bootstrap.prompt |
 | `repomix-headroom-optimizer` | Token optimization setup |
 | `spec-writer` | Convert ideas to SDD-format specs |
+| `agent-bootstrap` | Create agent personas/CLAUDE.md through adaptive onboarding conversations |
 | `project-scaffolder` | Bootstrap new projects |
 
 ## Key Concepts

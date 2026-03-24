@@ -99,3 +99,5 @@ Max 200 iterations. Max $10/session. Automatic git checkpoints.
 MIT — skills adapted from [agency-agents](https://github.com/agency-agents).
 
 CEO agent skill https://github.com/garrytan/gstack
+
+API Skill https://github.com/bytedance/deer-flow

@@ -6,7 +6,7 @@ Curated agent personas from [agency-agents](https://github.com/msitarzewski/agen
 
 These skills are available as Claude Code slash commands when working in this repository. Each provides specialized expertise for a specific development role.
 
-## Included Agents (25)
+## Included Agents (27)
 
 ### Engineering (11)
 | Agent | Use for |
@@ -39,12 +39,17 @@ These skills are available as Claude Code slash commands when working in this re
 | `agents-orchestrator` | Multi-agent project coordination |
 | `specialized-workflow-architect` | Business process automation |
 
+### Research (1)
+| Agent | Use for |
+|-------|---------|
+| `deep-research` | Multi-angle web research (4-phase: Broad → Deep → Diversity → Synthesis) before content generation |
+
 ### Audit (1)
 | Agent | Use for |
 |-------|---------|
 | `saas-project-auditor` | Full-stack SaaS project audit: feature inventory, security gaps, infra readiness, strategic GTM |
 
-### Meta Skills (6)
+### Meta Skills (7)
 | Agent | Use for |
 |-------|---------|
 | `business-analyst` | Create PRD, user stories, business rules, personas, journey maps |
@@ -52,6 +57,7 @@ These skills are available as Claude Code slash commands when working in this re
 | `bootstrap-architect` | Create/maintain bootstrap.prompt |
 | `repomix-headroom-optimizer` | Token optimization with Repomix + Headroom |
 | `spec-writer` | Convert ideas to SDD-format specifications |
+| `agent-bootstrap` | Create agent personas/CLAUDE.md through adaptive onboarding conversations |
 | `project-scaffolder` | Bootstrap new projects with skills framework |
 
 ## Customization
