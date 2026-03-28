@@ -29,11 +29,13 @@ This is a **reusable skills framework** for AI-augmented software development. I
 skills/
 ├── .claude/
 │   ├── bootstrap.prompt          # Session context anchor (loaded once)
-│   └── skills/                   # 24 AI agent skills
+│   └── skills/                   # 28 AI agent skills
 ├── autocode/                     # Spec-driven code generation
 │   ├── autocode.config.example   # Project-specific configuration
 │   ├── SPEC_TEMPLATE.md          # Standard spec format
 │   └── examples/                 # Example specs
+├── hooks/                        # Automated checks & guardrails (CI, pre-commit, validations)
+├── tools/                        # Custom scripts & recurring workflow prompts
 ├── bootstrap/                    # Bootstrap prompt templates & examples
 ├── integrations/                 # Repomix + Headroom setup
 │   ├── repomix/                  # Static codebase compression
@@ -48,7 +50,7 @@ skills/
     └── checklist/                # Software dev lifecycle checklist
 ```
 
-## Skills Catalog (27 skills)
+## Skills Catalog (28 skills)
 
 ### Engineering (11)
 | Skill | Purpose |
@@ -91,9 +93,10 @@ skills/
 |-------|---------|
 | `saas-project-auditor` | Full-stack SaaS project audit, feature inventory, gaps, launch roadmap |
 
-### Meta Skills (7)
+### Meta Skills (8)
 | Skill | Purpose |
 |-------|---------|
+| `project-memory-updater` | Continuous learning loop, extract rules/workflows from errors |
 | `business-analyst` | PRD, user stories, business rules, personas, journey maps |
 | `doc-sync-automator` | Auto-update docs when code changes |
 | `bootstrap-architect` | Create/maintain bootstrap.prompt |
@@ -103,6 +106,13 @@ skills/
 | `project-scaffolder` | Bootstrap new projects |
 
 ## Key Concepts
+
+### The Continuous Learning Loop
+To operate Claude as a self-improving infrastructure, follow these rules:
+1. **Error -> Rule**: When Claude makes a mistake, add a rule to `CLAUDE.md` or `.claude/bootstrap.prompt`.
+2. **Repetition -> Workflow**: When you repeat a task, write a new workflow in `tools/` or a new skill in `.claude/skills/`.
+3. **Breakage -> Guardrail**: When something breaks, add an automated test or guardrail to `hooks/`.
+*Use the `project-memory-updater` skill to automate this loop.*
 
 ### bootstrap.prompt vs CLAUDE.md
 | | CLAUDE.md | bootstrap.prompt |

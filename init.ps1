@@ -27,6 +27,8 @@ $dirs = @(
     ".claude/skills",
     "autocode/specs",
     "autocode/examples",
+    "hooks",
+    "tools",
     "docs/guidelines",
     "docs/templates",
     "docs/ci",
