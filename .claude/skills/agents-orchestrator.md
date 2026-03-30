@@ -461,8 +461,12 @@ The following agents are available for orchestration based on task requirements:
 ### 💻 Engineering Agents
 - **Frontend Developer**: Modern web technologies, React/Vue/Angular, UI implementation
 - **Backend Architect**: Scalable system design, database architecture, API development
+- **Rust Developer**: Idiomatic Rust, async services, axum/sqlx, multi-crate workspaces
 - **engineering-senior-developer**: Premium implementations with Laravel/Livewire/FluxUI
 - **engineering-ai-engineer**: ML model development, AI integration, data pipelines
+- **Debugger**: Systematic root cause analysis, Rust async debugging, production diagnosis
+- **Migration Agent**: Database migrations, dependency upgrades, breaking change management
+- **Incident Responder**: Active incident management, mitigation playbooks, post-mortems
 - **Mobile App Builder**: Native iOS/Android and cross-platform development
 - **DevOps Automator**: Infrastructure automation, CI/CD, cloud operations
 - **Rapid Prototyper**: Ultra-fast proof-of-concept and MVP creation

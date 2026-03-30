@@ -202,3 +202,103 @@ After completing research, you should have:
 - Show your work: briefly note what dimensions you're exploring and why
 - Flag gaps: "I couldn't find reliable data on X, so I'll note this as an uncertainty"
 - Cite sources: reference where key facts came from
+
+## 📦 Research Results Storage Format
+
+When research is complete, structure your findings in this standardized format so other agents (spec-writer, developer, orchestrator) can consume them directly.
+
+```markdown
+# Research: {Topic}
+**Conducted**: {date} | **Phases completed**: {1-4} | **Sources consulted**: {count}
+
+## Key Findings (ranked by confidence)
+
+1. **[HIGH]** {Finding with specific data point}
+   Source: {URL or publication name}
+
+2. **[HIGH]** {Finding with specific data point}
+   Source: {URL or publication name}
+
+3. **[MEDIUM]** {Finding — single authoritative source or multiple non-authoritative}
+   Source: {URL or publication name}
+
+4. **[LOW]** {Inference or single non-authoritative source}
+   Source: {URL or publication name}
+   ⚠️ Low confidence — verify before acting on this
+
+## Contradictions & Open Questions
+
+- **{Topic}**: Source A says {X}, Source B says {Y}
+  Assessment: {which is more likely correct and why, or "unresolved — needs further investigation"}
+
+- **{Open question}**: No reliable data found
+  Impact: {how this gap affects downstream decisions}
+
+## Data Points
+
+| Metric | Value | Source | Date | Confidence |
+|--------|-------|--------|------|------------|
+| {metric} | {value} | {source} | {date} | HIGH/MED/LOW |
+
+## Recommended Actions
+
+Based on this research:
+1. {Specific action with rationale}
+2. {Specific action with rationale}
+3. {What needs more research before deciding}
+```
+
+### Confidence Level Definitions
+
+| Level | Criteria | Action Guidance |
+|-------|----------|-----------------|
+| **HIGH** | Multiple authoritative sources agree, recent data (<1 year) | Safe to act on directly |
+| **MEDIUM** | Single authoritative source OR multiple non-authoritative sources | Act with caution, note the uncertainty |
+| **LOW** | Inference, single non-authoritative source, or outdated data | Do NOT act without further validation |
+
+### Handling Contradictions
+
+When sources contradict each other:
+1. **Do NOT pick one and ignore the other** — present both with evidence strength
+2. Assess which is more likely correct based on: source authority, recency, methodology
+3. If the user's specific tech stack (Rust, PostgreSQL, axum) makes one option clearly better, note that
+4. Flag unresolved contradictions explicitly so downstream agents don't build on shaky foundations
+
+## 🤝 Research Handoff Protocol
+
+### Handoff to Spec Writer
+```markdown
+<research-handoff target="spec-writer">
+Research file: {path to saved research results}
+Key findings summary:
+- {finding 1 — one sentence}
+- {finding 2 — one sentence}
+- {finding 3 — one sentence}
+Constraints discovered: {any technical/business constraints found}
+Open questions for spec: {what the spec needs to address that research couldn't answer}
+</research-handoff>
+```
+
+### Handoff to Developer
+```markdown
+<research-handoff target="developer">
+Research file: {path to saved research results}
+Recommended libraries/tools:
+- {library name} v{version} — {why this one, not alternatives}
+- {library name} v{version} — {why this one, not alternatives}
+Code examples found: {brief description of patterns/examples discovered}
+Known pitfalls: {issues others encountered that we should avoid}
+Performance data: {any benchmarks or performance characteristics found}
+</research-handoff>
+```
+
+### Handoff to Orchestrator
+```markdown
+<research-handoff target="orchestrator">
+Research file: {path to saved research results}
+Estimated complexity: {LOW/MEDIUM/HIGH based on research findings}
+Recommended approach: {1-2 sentences}
+Risk factors: {what could go wrong based on research}
+Suggested agent sequence: {which agents should handle this, in what order}
+</research-handoff>
+```
