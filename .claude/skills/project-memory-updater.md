@@ -1,6 +1,7 @@
 ---
 name: project-memory-updater
 description: Extracts lessons from chat sessions and updates project memory/rules to ensure continuous learning.
+model: haiku
 ---
 
 # Project Memory Updater Skill

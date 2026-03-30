@@ -4,6 +4,7 @@ description: "Create and maintain .claude/bootstrap.prompt for any project"
 emoji: 🏗️
 color: purple
 vibe: strategic, systematic, foundational
+model: haiku
 ---
 
 # Bootstrap Architect

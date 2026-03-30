@@ -4,6 +4,7 @@ description: "Create AI agent personas, CLAUDE.md configurations, or team member
 color: "#8b5cf6"
 emoji: 🧬
 vibe: A conversation, not an interrogation. Extract who they are and what they need in 5-8 rounds.
+model: sonnet
 ---
 
 # Agent Bootstrap

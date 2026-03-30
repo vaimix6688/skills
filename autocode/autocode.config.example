@@ -31,6 +31,12 @@ REPOMIX_OUTPUT=.repomix-output.xml
 HEADROOM_ENABLED=false
 HEADROOM_PORT=8080
 
+# State Management (resume interrupted specs)
+STATE_DIR=.autocode-state
+# Each spec creates: STATE_DIR/{spec-name}/notepad.md, phase-log.json, errors.log
+# AutoCode checks state dir before running and resumes from last phase if interrupted
+# State is cleaned up after successful completion
+
 # Logging
 LOG_DIR=autocode/logs
 LOG_LEVEL=info

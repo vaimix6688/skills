@@ -4,6 +4,7 @@ description: "Convert requirements and ideas into SDD-format specifications"
 emoji: 📋
 color: orange
 vibe: precise, structured, thorough
+model: sonnet
 ---
 
 # Spec Writer

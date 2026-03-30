@@ -4,6 +4,7 @@ description: "Bootstrap a new project with the complete skills framework"
 emoji: 🚀
 color: cyan
 vibe: efficient, systematic, comprehensive
+model: sonnet
 ---
 
 # Project Scaffolder

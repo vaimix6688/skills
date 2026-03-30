@@ -105,6 +105,46 @@ skills/
 | `agent-bootstrap` | Create agent personas/CLAUDE.md through adaptive onboarding conversations |
 | `project-scaffolder` | Bootstrap new projects |
 
+## Magic Keywords
+
+When you detect these keywords at the **start** of a user's message, automatically load and apply the corresponding skill:
+
+| Keyword | Skill | Behavior |
+|---------|-------|----------|
+| `autopilot` | `agents-orchestrator` | Full autonomous pipeline: analyze → architect → develop → test → ship |
+| `architect` | `engineering-software-architect` | System design mode: analyze trade-offs, propose architecture |
+| `review` | `engineering-code-reviewer` | Code review mode: read diff/PR, provide actionable feedback |
+| `secure` | `engineering-security-engineer` | Security audit mode: threat model, vulnerability scan |
+| `research` | `deep-research` | 4-phase web research: Broad → Deep → Diversity → Synthesis |
+| `spec` | `spec-writer` | Convert idea/requirements into SDD-format specification |
+| `audit` | `saas-project-auditor` | Full project audit: inventory, gaps, launch roadmap |
+| `optimize` | `engineering-database-optimizer` | Database optimization: query plans, indexes, schema review |
+| `devops` | `engineering-devops-automator` | Infrastructure mode: CI/CD, K8s, IaC |
+| `test` | `testing-api-tester` | API testing mode: contract tests, endpoint validation |
+| `analyze` | `business-analyst` | Business analysis: PRD, user stories, journey maps |
+
+**Usage:** Just start your message with the keyword:
+```
+architect: Design a microservices architecture for our payment system
+review: Check the latest PR for security issues
+research: What are the best practices for event sourcing in 2026?
+```
+
+## Model Routing
+
+Each skill has a `model` field in its frontmatter that determines which Claude model to use:
+
+| Tier | Model | When to use | Skills |
+|------|-------|-------------|--------|
+| `haiku` | claude-haiku-4-5 | Simple tasks, docs, memory updates | doc-sync-automator, project-memory-updater, bootstrap-architect, repomix-headroom-optimizer, technical-writer |
+| `sonnet` | claude-sonnet-4-6 | Standard development, testing, reviews | Most engineering & testing skills (default) |
+| `opus` | claude-opus-4-6 | Complex architecture, deep research, security audits | software-architect, backend-architect, agents-orchestrator, deep-research, saas-project-auditor, security-engineer, blockchain-security-auditor |
+
+AutoCode reads the `model` field automatically. Override with `--model`:
+```bash
+./autocode.sh /repo spec.md --agent engineering-senior-developer --model opus
+```
+
 ## Key Concepts
 
 ### The Continuous Learning Loop

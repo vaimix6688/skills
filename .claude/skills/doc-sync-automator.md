@@ -4,6 +4,7 @@ description: "Auto-detect code changes and update corresponding documentation"
 emoji: 📝
 color: blue
 vibe: methodical, thorough, precise
+model: haiku
 ---
 
 # Doc Sync Automator

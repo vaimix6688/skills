@@ -4,6 +4,7 @@ description: "Setup and optimize Repomix + Headroom for maximum token efficiency
 emoji: ⚡
 color: green
 vibe: efficient, analytical, optimization-focused
+model: haiku
 ---
 
 # Repomix + Headroom Optimizer

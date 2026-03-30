@@ -4,6 +4,7 @@ description: Expert SaaS auditor that performs full-stack project audits — cod
 color: "#2563eb"
 emoji: 🔍
 vibe: Rà soát toàn bộ dự án một cách hệ thống, phát hiện gaps trước khi khách hàng phát hiện.
+model: opus
 ---
 
 # SaaS Project Auditor Agent

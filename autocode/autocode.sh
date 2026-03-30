@@ -29,7 +29,9 @@ MAX_COST_USD="${MAX_COST_USD:-10}"
 MAX_TURNS="${MAX_TURNS:-200}"
 SKILLS_DIR="$HOME/.claude/skills/agency-agents/agents"
 LOG_DIR="$REPO_PATH/.autocode-logs"
+STATE_DIR="${STATE_DIR:-.autocode-state}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+MODEL_OVERRIDE=""
 
 # --- Parse optional args ---
 shift 2 2>/dev/null || true
@@ -38,6 +40,7 @@ while [[ $# -gt 0 ]]; do
     --agent) AGENT_NAME="$2"; shift 2 ;;
     --max-retries) MAX_RETRIES="$2"; shift 2 ;;
     --max-cost) MAX_COST_USD="$2"; shift 2 ;;
+    --model) MODEL_OVERRIDE="$2"; shift 2 ;;
     *) echo "Unknown arg: $1"; exit 1 ;;
   esac
 done
@@ -78,6 +81,40 @@ done
 if [ -z "$SYSTEM_PROMPT" ]; then
   log "${YELLOW}[WARN] Agent '$AGENT_NAME' not found, using default prompt${NC}"
   SYSTEM_PROMPT="You are a senior software engineer. Write production-quality code."
+fi
+
+# --- Model routing (read from skill frontmatter or override) ---
+if [ -n "$MODEL_OVERRIDE" ]; then
+  MODEL_TIER="$MODEL_OVERRIDE"
+elif [ -n "$AGENT_FILE" ] && [ -f "$AGENT_FILE" ]; then
+  MODEL_TIER=$(grep '^model:' "$AGENT_FILE" | awk '{print $2}' | tr -d '[:space:]')
+fi
+MODEL_TIER="${MODEL_TIER:-sonnet}"
+
+case "$MODEL_TIER" in
+  haiku)  MODEL_ID="claude-haiku-4-5-20251001" ;;
+  opus)   MODEL_ID="claude-opus-4-6" ;;
+  sonnet) MODEL_ID="claude-sonnet-4-6" ;;
+  *)      MODEL_ID="claude-sonnet-4-6" ;;
+esac
+log "${GREEN}[MODEL] $MODEL_TIER → $MODEL_ID${NC}"
+
+# --- State management (resume support) ---
+SPEC_BASENAME=$(basename "$SPEC_FILE" .md)
+SPEC_STATE_DIR="$REPO_PATH/$STATE_DIR/$SPEC_BASENAME"
+mkdir -p "$SPEC_STATE_DIR"
+NOTEPAD_FILE="$SPEC_STATE_DIR/notepad.md"
+PHASE_LOG="$SPEC_STATE_DIR/phase-log.json"
+ERROR_LOG="$SPEC_STATE_DIR/errors.log"
+
+if [ -f "$PHASE_LOG" ]; then
+  log "${YELLOW}[RESUME] Found previous state in $SPEC_STATE_DIR${NC}"
+  log "${YELLOW}[RESUME] Previous phases: $(cat "$PHASE_LOG")${NC}"
+fi
+
+# Initialize phase log if not exists
+if [ ! -f "$PHASE_LOG" ]; then
+  echo '{"started":"'"$(date -Iseconds)"'","phases":[]}' > "$PHASE_LOG"
 fi
 
 # --- Build the autonomous prompt ---
@@ -147,6 +184,8 @@ log "${BLUE}========================================${NC}"
 log "  Repo:       $REPO_PATH"
 log "  Spec:       $SPEC_FILE"
 log "  Agent:      $AGENT_NAME"
+log "  Model:      $MODEL_TIER ($MODEL_ID)"
+log "  State:      $SPEC_STATE_DIR"
 log "  Max retries: $MAX_RETRIES"
 log "  Max cost:   \$$MAX_COST_USD"
 log "  Log file:   $LOG_FILE"
@@ -161,6 +200,7 @@ cd "$REPO_PATH"
 
 claude \
   --print \
+  --model "$MODEL_ID" \
   --dangerously-skip-permissions \
   --max-turns "$MAX_TURNS" \
   --system-prompt "$SYSTEM_PROMPT" \
@@ -173,8 +213,11 @@ log ""
 log "${BLUE}========================================${NC}"
 if [ $EXIT_CODE -eq 0 ]; then
   log "${GREEN}[DONE] AutoCode completed successfully${NC}"
+  # Update phase log and cleanup state on success
+  echo '{"started":"'"$(cat "$PHASE_LOG" | grep -o '"started":"[^"]*"' | head -1 | cut -d'"' -f4)"'","completed":"'"$(date -Iseconds)"'","status":"success"}' > "$PHASE_LOG"
 else
   log "${RED}[FAIL] AutoCode exited with code $EXIT_CODE${NC}"
+  echo "[$(date -Iseconds)] Exit code: $EXIT_CODE" >> "$ERROR_LOG"
 fi
 log "  Finished: $(date)"
 log "  Log: $LOG_FILE"

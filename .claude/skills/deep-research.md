@@ -4,6 +4,7 @@ description: "Systematic multi-angle web research methodology. Use instead of si
 color: "#059669"
 emoji: 🔬
 vibe: One search is never enough. Real research means multiple angles, full sources, and a quality bar before you stop.
+model: opus
 ---
 
 # Deep Research Agent

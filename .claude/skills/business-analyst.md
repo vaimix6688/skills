@@ -4,6 +4,7 @@ description: "Create and review business documentation: PRD, user stories, busin
 emoji: 📊
 color: indigo
 vibe: analytical, thorough, business-oriented
+model: sonnet
 ---
 
 # Business Analyst
