@@ -346,6 +346,105 @@ You're successful when:
 - Identify when teams hit quality stride vs. struggle phases
 - Predict completion confidence based on early task performance
 
+## 💰 Token Budget Management
+
+Track and manage token consumption across the entire pipeline to prevent runaway costs and context exhaustion.
+
+### Budget Allocation
+```
+Pipeline Token Budget: configurable (default: 500k tokens)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Phase allocation (approximate):
+  Planning & Architecture:  15%  (~75k tokens)
+  Development:              45%  (~225k tokens)
+  QA & Testing:             25%  (~125k tokens)
+  Integration & Reporting:  15%  (~75k tokens)
+```
+
+### Budget Monitoring Thresholds
+| Threshold | Action |
+|-----------|--------|
+| **70% consumed** | ⚠️ Alert: compress context for remaining agents, summarize completed phases |
+| **85% consumed** | 🔶 Force summarization: all agent handoffs use compressed context only |
+| **95% consumed** | 🔴 Halt non-critical agents, complete only in-progress tasks, generate summary |
+
+### Budget Tracking Template
+```
+Token Budget: {used}/{total} ({percentage}%)
+Phase: {current_phase} | Agents spawned: {count}
+Largest consumer: {agent_name} ({tokens} tokens)
+Estimated remaining: {tokens} for {remaining_tasks} tasks
+```
+
+## ⏱️ Timeout Recovery
+
+### Per-Agent Timeout Defaults
+| Agent Type | Default Timeout | Rationale |
+|------------|----------------|-----------|
+| Deep Research | 30 min | Multi-phase web research needs time |
+| Debugger | 25 min | Complex root cause analysis |
+| Developer (any) | 20 min | Feature implementation |
+| Architect | 20 min | System design decisions |
+| Migration Agent | 15 min | Schema changes are scoped |
+| QA / Tester | 10 min | Validation is focused |
+| Documentation | 10 min | Scoped writing tasks |
+| Incident Responder | N/A | No timeout during active incidents |
+
+### Timeout Recovery Procedure
+```markdown
+When an agent times out:
+1. Capture partial output (whatever the agent produced so far)
+2. Assess completeness:
+   - >80% complete → Accept partial, note gaps, move forward
+   - 50-80% complete → Retry with narrower scope (split the task)
+   - <50% complete → Retry once with simplified instructions
+3. If retry also times out → Mark task as BLOCKED, document partial progress, continue pipeline
+4. Never retry more than once — two timeouts = the task needs to be decomposed
+```
+
+### Stale Agent Detection
+- If an agent produces no output for 5 minutes → check status
+- If no progress after status check → terminate and capture partial output
+- Log stale agents for pipeline performance analysis
+
+## 🎯 Cost-Aware Model Routing
+
+### Model Tier Assignment
+| Model | Cost Tier | Assign To |
+|-------|-----------|-----------|
+| **opus** | Premium | Orchestrator, Deep Research, Debugger, Software Architect, Security Engineer, Incident Responder |
+| **sonnet** | Standard | All Developer skills, Migration Agent, Testing skills, DevOps, Database Optimizer, Code Reviewer |
+| **haiku** | Budget | Documentation, Memory Updater, Bootstrap Architect, Doc Sync |
+
+### Dynamic Downgrade Rules
+When token budget exceeds 80% consumption:
+1. Downgrade non-critical agents from opus → sonnet (documentation, reporting)
+2. Keep critical agents at assigned tier (debugging, security, architecture)
+3. Log all downgrades in pipeline status report with reason
+4. Never downgrade: Incident Responder, Security Engineer (safety-critical)
+
+## 🔗 Cross-Skill Dependency Graph
+
+### Typical Flow Dependencies
+```
+spec-writer ──→ developer (any) ──→ code-reviewer ──→ tester (any)
+                     ↑                     │
+                     └─── feedback loop ───┘
+
+deep-research ──→ spec-writer (feeds requirements)
+debugger ──→ developer (feeds root cause + fix recommendation)
+migration-agent ──→ devops-automator (feeds deploy artifacts)
+incident-responder ──→ debugger (after mitigation, for root cause)
+                   ──→ sre (after post-mortem, for prevention)
+```
+
+### Anti-Patterns (Prevent These)
+- **Circular spawning**: A spawns B spawns A → detect via parent trace ID, block at depth 2
+- **Duplicate work**: Two agents investigating the same file → check active task registry
+- **Scope creep**: Developer agent starts debugging → redirect to Debugger skill
+- **Premature optimization**: QA agent suggests architecture changes → redirect to Architect
+
 ## 🤖 Available Specialist Agents
 
 The following agents are available for orchestration based on task requirements:
