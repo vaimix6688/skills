@@ -7,6 +7,7 @@
 #   ./autocode.sh /path/to/myproject-core spec.md
 #   ./autocode.sh /path/to/myproject-ai spec.md --agent backend-architect
 #   ./autocode.sh . spec.md --max-retries 5 --max-cost 10
+#   ./autocode.sh . program.md --mode program --metric "npm test -- --coverage"
 # =============================================================================
 
 set -euo pipefail
@@ -30,6 +31,10 @@ MAX_TURNS="${MAX_TURNS:-200}"
 SKILLS_DIR="$HOME/.claude/skills/agency-agents/agents"
 LOG_DIR="$REPO_PATH/.autocode-logs"
 STATE_DIR="${STATE_DIR:-.autocode-state}"
+INPUT_MODE="${INPUT_MODE:-spec}"
+METRIC_CMD="${METRIC_CMD:-}"
+METRIC_DIRECTION="${METRIC_DIRECTION:-lower_is_better}"
+MAX_TIME_PER_ITERATION="${MAX_TIME_PER_ITERATION:-300}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 MODEL_OVERRIDE=""
 
@@ -41,9 +46,18 @@ while [[ $# -gt 0 ]]; do
     --max-retries) MAX_RETRIES="$2"; shift 2 ;;
     --max-cost) MAX_COST_USD="$2"; shift 2 ;;
     --model) MODEL_OVERRIDE="$2"; shift 2 ;;
+    --mode) INPUT_MODE="$2"; shift 2 ;;
+    --metric) METRIC_CMD="$2"; shift 2 ;;
+    --metric-direction) METRIC_DIRECTION="$2"; shift 2 ;;
+    --time-budget) MAX_TIME_PER_ITERATION="$2"; shift 2 ;;
     *) echo "Unknown arg: $1"; exit 1 ;;
   esac
 done
+
+# --- Auto-detect input mode from file name ---
+if [[ "$SPEC_FILE" == *"program"* ]] && [ "$INPUT_MODE" = "spec" ]; then
+  INPUT_MODE="program"
+fi
 
 # --- Colors ---
 RED='\033[0;31m'
@@ -118,9 +132,105 @@ if [ ! -f "$PHASE_LOG" ]; then
 fi
 
 # --- Build the autonomous prompt ---
-SPEC_CONTENT=$(cat "$REPO_PATH/$SPEC_FILE")
+INPUT_CONTENT=$(cat "$REPO_PATH/$SPEC_FILE")
 
-AUTONOMOUS_PROMPT="$(cat <<'PROMPT_EOF'
+# --- Build metric instructions ---
+METRIC_INSTRUCTIONS=""
+if [ -n "$METRIC_CMD" ]; then
+  METRIC_INSTRUCTIONS="$(cat <<METRIC_EOF
+
+## METRIC-DRIVEN KEEP/DISCARD (Autoresearch Pattern)
+
+After EACH code change, run the metric command and compare against the previous value:
+
+**Metric command:** \`$METRIC_CMD\`
+**Direction:** $METRIC_DIRECTION
+
+### Keep/Discard Protocol:
+1. Before making changes, run the metric command and record the BASELINE value
+2. Make your code changes
+3. Run the metric command again to get the NEW value
+4. Compare:
+   - If metric IMPROVED (${METRIC_DIRECTION}): **KEEP** changes, commit checkpoint, update baseline
+   - If metric WORSENED: **DISCARD** changes immediately with \`git checkout -- .\` and try a different approach
+   - If metric is UNCHANGED: keep changes only if they improve code quality
+5. Log each iteration: \`echo "[iteration N] baseline=X new=Y decision=KEEP/DISCARD" >> .autocode-state/metric-log.txt\`
+
+**CRITICAL: Never keep a change that worsens the metric. Try at least 3 different approaches before giving up on an improvement.**
+METRIC_EOF
+)"
+fi
+
+# --- Build time budget instructions ---
+TIME_INSTRUCTIONS=""
+if [ "$MAX_TIME_PER_ITERATION" -gt 0 ] 2>/dev/null; then
+  TIME_INSTRUCTIONS="
+## TIME BUDGET
+
+Each iteration (analyze → code → test → evaluate) must complete within **${MAX_TIME_PER_ITERATION} seconds**.
+- If a test/build/metric command runs longer than this, kill it and move on
+- Use \`timeout ${MAX_TIME_PER_ITERATION}\` prefix for long-running commands
+- Prioritize fast feedback: prefer unit tests over integration tests within time budget"
+fi
+
+if [ "$INPUT_MODE" = "program" ]; then
+  # --- Program mode (exploratory, Karpathy-style) ---
+  AUTONOMOUS_PROMPT="$(cat <<'PROMPT_EOF'
+# AUTONOMOUS EXPLORATION MODE — DO NOT ASK FOR PERMISSION
+
+You are operating in FULLY AUTONOMOUS **exploration mode**. You have a research direction (program.md) instead of a strict spec. Your goal is to iteratively improve the codebase through experimentation.
+
+## YOUR LOOP (repeat until satisfied or max iterations reached):
+
+### Step 1: READ DIRECTION
+- Read program.md for the research direction and goals
+- Understand what aspects to explore/optimize
+- Read existing code to understand the current state
+
+### Step 2: HYPOTHESIZE
+- Form a specific hypothesis about what change could improve the system
+- Keep changes small and focused — ONE idea per iteration
+- Document your hypothesis in .autocode-state/notepad.md
+
+### Step 3: IMPLEMENT
+- Make the minimal code change to test your hypothesis
+- Follow existing patterns in the repo
+
+### Step 4: MEASURE
+- Run tests to ensure nothing is broken
+- Run the metric command if specified (see METRIC section below)
+- Compare results against baseline
+
+### Step 5: DECIDE (Keep or Discard)
+- If improvement confirmed → KEEP changes, checkpoint commit with descriptive message
+- If no improvement or regression → DISCARD with `git checkout -- .`
+- Log the result in .autocode-state/experiment-log.md:
+  ```
+  ## Iteration N — [KEEP/DISCARD]
+  **Hypothesis:** ...
+  **Change:** ...
+  **Result:** baseline=X → new=Y
+  ```
+
+### Step 6: ITERATE
+- If max retries (MAX_RETRIES_PLACEHOLDER) reached → stop and summarize findings
+- Otherwise → go back to Step 2 with new hypothesis informed by previous results
+- Print "AUTOCODE COMPLETE" when done
+
+## CRITICAL RULES:
+- NEVER stop to ask me questions — make reasonable decisions
+- ONE change per iteration — keep experiments isolated
+- ALWAYS measure before and after
+- NEVER keep a change that breaks existing tests
+- Checkpoint commit after each KEPT change
+- Document ALL experiments (including discarded ones) in experiment-log.md
+
+## PROGRAM (Research Direction):
+PROMPT_EOF
+)"
+else
+  # --- Spec mode (standard, strict requirements) ---
+  AUTONOMOUS_PROMPT="$(cat <<'PROMPT_EOF'
 # AUTONOMOUS CODING MODE — DO NOT ASK FOR PERMISSION
 
 You are operating in FULLY AUTONOMOUS mode. Read the spec below and execute the complete coding loop WITHOUT stopping to ask questions.
@@ -168,28 +278,35 @@ You are operating in FULLY AUTONOMOUS mode. Read the spec below and execute the 
 ## SPEC:
 PROMPT_EOF
 )"
+fi
 
 # Replace placeholder
 AUTONOMOUS_PROMPT="${AUTONOMOUS_PROMPT//MAX_RETRIES_PLACEHOLDER/$MAX_RETRIES}"
 
-# Append the actual spec
+# Append metric and time instructions if configured
 AUTONOMOUS_PROMPT="$AUTONOMOUS_PROMPT
 
-$SPEC_CONTENT"
+$INPUT_CONTENT
+$METRIC_INSTRUCTIONS
+$TIME_INSTRUCTIONS"
 
 # --- Execute ---
 log "${BLUE}========================================${NC}"
-log "${BLUE}  $PROJECT_NAME AutoCode v1.0${NC}"
+log "${BLUE}  $PROJECT_NAME AutoCode v2.0${NC}"
 log "${BLUE}========================================${NC}"
-log "  Repo:       $REPO_PATH"
-log "  Spec:       $SPEC_FILE"
-log "  Agent:      $AGENT_NAME"
-log "  Model:      $MODEL_TIER ($MODEL_ID)"
-log "  State:      $SPEC_STATE_DIR"
+log "  Repo:        $REPO_PATH"
+log "  Input:       $SPEC_FILE (mode: $INPUT_MODE)"
+log "  Agent:       $AGENT_NAME"
+log "  Model:       $MODEL_TIER ($MODEL_ID)"
+log "  State:       $SPEC_STATE_DIR"
 log "  Max retries: $MAX_RETRIES"
-log "  Max cost:   \$$MAX_COST_USD"
-log "  Log file:   $LOG_FILE"
-log "  Started:    $(date)"
+log "  Max cost:    \$$MAX_COST_USD"
+log "  Time budget: ${MAX_TIME_PER_ITERATION}s per iteration"
+if [ -n "$METRIC_CMD" ]; then
+log "  Metric:      $METRIC_CMD ($METRIC_DIRECTION)"
+fi
+log "  Log file:    $LOG_FILE"
+log "  Started:     $(date)"
 log "${BLUE}========================================${NC}"
 log ""
 log "${YELLOW}[START] Launching Claude Code in autonomous mode...${NC}"

@@ -25,6 +25,21 @@ MAX_RETRIES=10
 MAX_COST_USD=10
 DOCKER_SANDBOX=false
 
+# Iteration Mode (inspired by Karpathy's autoresearch)
+# When INPUT_MODE=program, uses program.md (exploratory direction) instead of spec (strict requirements)
+# When METRIC_CMD is set, enables keep/discard pattern: run metric after each change,
+# rollback if metric worsens (e.g. test coverage drops, bundle size increases, perf regresses)
+INPUT_MODE=spec
+# INPUT_MODE=program
+METRIC_CMD=
+# METRIC_CMD=npm run test -- --coverage | grep 'All files' | awk '{print $10}'
+# METRIC_CMD=cargo bench --bench main 2>&1 | grep 'time:' | awk '{print $3}'
+# METRIC_CMD=du -sb dist/ | awk '{print $1}'
+METRIC_DIRECTION=lower_is_better
+# METRIC_DIRECTION=higher_is_better
+MAX_TIME_PER_ITERATION=300
+# Time budget in seconds per iteration (default 300 = 5 minutes, 0 = no limit)
+
 # Integration
 REPOMIX_ENABLED=false
 REPOMIX_OUTPUT=.repomix-output.xml

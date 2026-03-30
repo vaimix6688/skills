@@ -1,14 +1,21 @@
 # =============================================================================
 # AutoCode — PowerShell (Windows)
-# Usage: .\autocode.ps1 [spec-file]
-# Example: .\autocode.ps1 spec.md
+# Usage: .\autocode.ps1 [spec-file] [-Mode program] [-Metric "command"]
+# Examples:
+#   .\autocode.ps1 spec.md
+#   .\autocode.ps1 program.md -Mode program -Metric "npm test -- --coverage"
 # =============================================================================
 
 param(
     [string]$SpecFile = "spec.md",
     [string]$Agent = "",
     [string]$Model = "",
-    [int]$MaxTurns = 0
+    [string]$Mode = "",
+    [string]$Metric = "",
+    [string]$MetricDirection = "",
+    [int]$TimeBudget = 0,
+    [int]$MaxTurns = 0,
+    [int]$MaxRetries = 0
 )
 
 $ErrorActionPreference = "Stop"
@@ -28,9 +35,14 @@ if (Test-Path $ConfigFile) {
                 $key = $parts[0].Trim()
                 $val = $parts[1].Trim()
                 switch ($key) {
-                    "PROJECT_NAME"  { $ProjectName = $val }
-                    "PROJECT_ROOT"  { $ProjectRoot = $val }
-                    "MAX_TURNS"     { if ($MaxTurns -eq 0) { $MaxTurns = [int]$val } }
+                    "PROJECT_NAME"         { $ProjectName = $val }
+                    "PROJECT_ROOT"         { $ProjectRoot = $val }
+                    "MAX_TURNS"            { if ($MaxTurns -eq 0) { $MaxTurns = [int]$val } }
+                    "MAX_RETRIES"          { if ($MaxRetries -eq 0) { $MaxRetries = [int]$val } }
+                    "INPUT_MODE"           { if (-not $Mode) { $Mode = $val } }
+                    "METRIC_CMD"           { if (-not $Metric) { $Metric = $val } }
+                    "METRIC_DIRECTION"     { if (-not $MetricDirection) { $MetricDirection = $val } }
+                    "MAX_TIME_PER_ITERATION" { if ($TimeBudget -eq 0) { $TimeBudget = [int]$val } }
                 }
             }
         }
@@ -38,6 +50,13 @@ if (Test-Path $ConfigFile) {
 }
 
 if ($MaxTurns -eq 0) { $MaxTurns = 200 }
+if ($MaxRetries -eq 0) { $MaxRetries = 10 }
+if ($TimeBudget -eq 0) { $TimeBudget = 300 }
+if (-not $Mode) { $Mode = "spec" }
+if (-not $MetricDirection) { $MetricDirection = "lower_is_better" }
+
+# Auto-detect mode from filename
+if ($SpecFile -match "program" -and $Mode -eq "spec") { $Mode = "program" }
 
 # --- Model routing ---
 $DefaultAgent = "engineering-senior-developer"
@@ -96,20 +115,121 @@ $SpecContent = Get-Content $SpecFile -Raw
 Write-Host "================================================" -ForegroundColor Cyan
 Write-Host "  $ProjectName AutoCode (PowerShell)" -ForegroundColor Cyan
 Write-Host "================================================" -ForegroundColor Cyan
-Write-Host "  Spec:  $SpecFile"
-Write-Host "  Agent: $AgentName"
-Write-Host "  Model: $ModelTier ($ModelId)"
-Write-Host "  Dir:   $(Get-Location)"
-Write-Host "  State: $SpecStateDir"
-Write-Host "  Time:  $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
-Write-Host "  Max:   $MaxTurns turns"
+Write-Host "  Input:       $SpecFile (mode: $Mode)"
+Write-Host "  Agent:       $AgentName"
+Write-Host "  Model:       $ModelTier ($ModelId)"
+Write-Host "  Dir:         $(Get-Location)"
+Write-Host "  State:       $SpecStateDir"
+Write-Host "  Time budget: ${TimeBudget}s per iteration"
+if ($Metric) { Write-Host "  Metric:      $Metric ($MetricDirection)" }
+Write-Host "  Time:        $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+Write-Host "  Max:         $MaxTurns turns, $MaxRetries retries"
 Write-Host "================================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Launching Claude Code in autonomous mode..." -ForegroundColor Yellow
 Write-Host ""
 
-$Prompt = @"
-AUTONOMOUS MODE — DO NOT ASK FOR PERMISSION.
+# --- Build metric instructions ---
+$MetricInstructions = ""
+if ($Metric) {
+    $MetricInstructions = @"
+
+## METRIC-DRIVEN KEEP/DISCARD (Autoresearch Pattern)
+
+After EACH code change, run the metric command and compare against the previous value:
+
+**Metric command:** ``$Metric``
+**Direction:** $MetricDirection
+
+### Keep/Discard Protocol:
+1. Before making changes, run the metric command and record the BASELINE value
+2. Make your code changes
+3. Run the metric command again to get the NEW value
+4. Compare:
+   - If metric IMPROVED ($MetricDirection): **KEEP** changes, commit checkpoint, update baseline
+   - If metric WORSENED: **DISCARD** changes immediately with ``git checkout -- .`` and try a different approach
+   - If metric is UNCHANGED: keep changes only if they improve code quality
+5. Log each iteration: ``echo "[iteration N] baseline=X new=Y decision=KEEP/DISCARD" >> .autocode-state/metric-log.txt``
+
+**CRITICAL: Never keep a change that worsens the metric. Try at least 3 different approaches before giving up on an improvement.**
+"@
+}
+
+# --- Build time budget instructions ---
+$TimeInstructions = ""
+if ($TimeBudget -gt 0) {
+    $TimeInstructions = @"
+
+## TIME BUDGET
+
+Each iteration (analyze -> code -> test -> evaluate) must complete within **${TimeBudget} seconds**.
+- If a test/build/metric command runs too long, stop it and move on
+- Prioritize fast feedback: prefer unit tests over integration tests within time budget
+"@
+}
+
+if ($Mode -eq "program") {
+    # --- Program mode (exploratory, Karpathy-style) ---
+    $Prompt = @"
+# AUTONOMOUS EXPLORATION MODE — DO NOT ASK FOR PERMISSION
+
+You are operating in FULLY AUTONOMOUS **exploration mode**. You have a research direction (program.md) instead of a strict spec. Your goal is to iteratively improve the codebase through experimentation.
+
+## YOUR LOOP (repeat until satisfied or max iterations reached):
+
+### Step 1: READ DIRECTION
+- Read program.md for the research direction and goals
+- Understand what aspects to explore/optimize
+- Read existing code to understand the current state
+
+### Step 2: HYPOTHESIZE
+- Form a specific hypothesis about what change could improve the system
+- Keep changes small and focused — ONE idea per iteration
+- Document your hypothesis in .autocode-state/notepad.md
+
+### Step 3: IMPLEMENT
+- Make the minimal code change to test your hypothesis
+- Follow existing patterns in the repo
+
+### Step 4: MEASURE
+- Run tests to ensure nothing is broken
+- Run the metric command if specified (see METRIC section below)
+- Compare results against baseline
+
+### Step 5: DECIDE (Keep or Discard)
+- If improvement confirmed -> KEEP changes, checkpoint commit with descriptive message
+- If no improvement or regression -> DISCARD with ``git checkout -- .``
+- Log the result in .autocode-state/experiment-log.md:
+  ```
+  ## Iteration N — [KEEP/DISCARD]
+  **Hypothesis:** ...
+  **Change:** ...
+  **Result:** baseline=X -> new=Y
+  ```
+
+### Step 6: ITERATE
+- If max retries ($MaxRetries) reached -> stop and summarize findings
+- Otherwise -> go back to Step 2 with new hypothesis informed by previous results
+- Print "AUTOCODE COMPLETE" when done
+
+## CRITICAL RULES:
+- NEVER stop to ask me questions — make reasonable decisions
+- ONE change per iteration — keep experiments isolated
+- ALWAYS measure before and after
+- NEVER keep a change that breaks existing tests
+- Checkpoint commit after each KEPT change
+- Document ALL experiments (including discarded ones) in experiment-log.md
+
+## PROGRAM (Research Direction):
+
+$SpecContent
+$MetricInstructions
+$TimeInstructions
+"@
+} else {
+    # --- Spec mode (standard, strict requirements) ---
+    $Prompt = @"
+# AUTONOMOUS CODING MODE — DO NOT ASK FOR PERMISSION
 
 You are operating in FULLY AUTONOMOUS mode. Read the spec below and execute the complete coding loop WITHOUT stopping to ask questions.
 
@@ -133,7 +253,7 @@ You are operating in FULLY AUTONOMOUS mode. Read the spec below and execute the 
 ### Step 4: EVALUATE
 - If ALL tests PASS (exit code 0) -> go to Step 5
 - If ANY test FAILS -> read the error, fix the code, go back to Step 3
-- Maximum retries: 10
+- Maximum retries: $MaxRetries
 
 ### Step 5: LINT & BUILD
 - Run lint command from DoD
@@ -149,12 +269,16 @@ You are operating in FULLY AUTONOMOUS mode. Read the spec below and execute the 
 - NEVER stop to ask questions — make reasonable decisions
 - NEVER skip writing tests — every business rule needs a test
 - If a dependency is missing, install it
+- If you can't figure something out after 3 attempts, log it and move on
 - Commit after EACH module succeeds (checkpoint commits)
 
 ## SPEC:
 
 $SpecContent
+$MetricInstructions
+$TimeInstructions
 "@
+}
 
 claude --print --model $ModelId --dangerously-skip-permissions --max-turns $MaxTurns $Prompt
 

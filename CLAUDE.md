@@ -163,10 +163,37 @@ To operate Claude as a self-improving infrastructure, follow these rules:
 | Token cost | Per turn | One-time |
 
 ### AutoCode Workflow
+
+AutoCode supports two input modes:
+
+**Spec Mode** (default) — strict requirements, deterministic output:
 ```
 Spec (SDD format) → Claude Code → Code → Test → Lint → Fix → Commit
 ```
 Self-healing loop: if tests fail, Claude reads errors and fixes automatically.
+
+**Program Mode** (exploratory, inspired by Karpathy's autoresearch) — research direction, iterative experiments:
+```
+program.md (direction) → Hypothesize → Implement → Measure → Keep/Discard → Repeat
+```
+Agent runs ~20-100 experiments autonomously, keeping improvements and discarding regressions.
+
+```bash
+# Spec mode (default)
+./autocode.sh /repo spec.md --agent engineering-senior-developer
+
+# Program mode with metric-driven keep/discard
+./autocode.sh /repo program.md --mode program --metric "npm run bench | tail -1" --metric-direction lower_is_better
+
+# With time budget per iteration
+./autocode.sh /repo program.md --mode program --time-budget 300
+```
+
+**Key features:**
+- **Metric-driven keep/discard**: run a metric command after each change, auto-rollback if metric worsens
+- **Time budget**: cap each iteration to N seconds (default 300s = 5 minutes)
+- **Experiment log**: all iterations (kept + discarded) logged in `.autocode-state/experiment-log.md`
+- **Auto-detect**: files named `program*.md` auto-switch to program mode
 
 ### Token Optimization Stack
 ```
