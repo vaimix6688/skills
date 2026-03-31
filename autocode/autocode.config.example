@@ -40,6 +40,15 @@ METRIC_DIRECTION=lower_is_better
 MAX_TIME_PER_ITERATION=300
 # Time budget in seconds per iteration (default 300 = 5 minutes, 0 = no limit)
 
+# Strategy (ATLAS-inspired orchestration patterns)
+# standard   = v1 behavior, single attempt, fix-and-retry
+# plansearch = generate N candidate plans, score, pick best, then execute
+# resilient  = plansearch + PR-CoT self-repair (multi-perspective failure analysis)
+# explore    = program mode + metric-driven keep/discard
+DEFAULT_STRATEGY=standard
+CANDIDATES=1
+# Set CANDIDATES=3 for plansearch/resilient (auto-set if using those strategies)
+
 # Integration
 REPOMIX_ENABLED=false
 REPOMIX_OUTPUT=.repomix-output.xml

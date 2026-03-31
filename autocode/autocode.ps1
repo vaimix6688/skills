@@ -1,9 +1,11 @@
 # =============================================================================
 # AutoCode — PowerShell (Windows)
-# Usage: .\autocode.ps1 [spec-file] [-Mode program] [-Metric "command"]
+# Usage: .\autocode.ps1 [spec-file] [-Strategy plansearch] [-Candidates 3]
 # Examples:
 #   .\autocode.ps1 spec.md
-#   .\autocode.ps1 program.md -Mode program -Metric "npm test -- --coverage"
+#   .\autocode.ps1 spec.md -Strategy plansearch -Candidates 3
+#   .\autocode.ps1 spec.md -Strategy resilient
+#   .\autocode.ps1 program.md -Strategy explore -Metric "npm run bench"
 # =============================================================================
 
 param(
@@ -11,6 +13,8 @@ param(
     [string]$Agent = "",
     [string]$Model = "",
     [string]$Mode = "",
+    [string]$Strategy = "",
+    [int]$Candidates = 0,
     [string]$Metric = "",
     [string]$MetricDirection = "",
     [int]$TimeBudget = 0,
@@ -43,6 +47,8 @@ if (Test-Path $ConfigFile) {
                     "METRIC_CMD"           { if (-not $Metric) { $Metric = $val } }
                     "METRIC_DIRECTION"     { if (-not $MetricDirection) { $MetricDirection = $val } }
                     "MAX_TIME_PER_ITERATION" { if ($TimeBudget -eq 0) { $TimeBudget = [int]$val } }
+                    "DEFAULT_STRATEGY"     { if (-not $Strategy) { $Strategy = $val } }
+                    "CANDIDATES"           { if ($Candidates -eq 0) { $Candidates = [int]$val } }
                 }
             }
         }
@@ -54,9 +60,18 @@ if ($MaxRetries -eq 0) { $MaxRetries = 10 }
 if ($TimeBudget -eq 0) { $TimeBudget = 300 }
 if (-not $Mode) { $Mode = "spec" }
 if (-not $MetricDirection) { $MetricDirection = "lower_is_better" }
+if (-not $Strategy) { $Strategy = "standard" }
+if ($Candidates -eq 0) { $Candidates = 1 }
 
 # Auto-detect mode from filename
 if ($SpecFile -match "program" -and $Mode -eq "spec") { $Mode = "program" }
+
+# Strategy implies settings
+switch ($Strategy) {
+    "plansearch" { if ($Candidates -eq 1) { $Candidates = 3 } }
+    "resilient"  { if ($Candidates -eq 1) { $Candidates = 3 } }
+    "explore"    { $Mode = "program" }
+}
 
 # --- Model routing ---
 $DefaultAgent = "engineering-senior-developer"
@@ -116,6 +131,7 @@ Write-Host "================================================" -ForegroundColor C
 Write-Host "  $ProjectName AutoCode (PowerShell)" -ForegroundColor Cyan
 Write-Host "================================================" -ForegroundColor Cyan
 Write-Host "  Input:       $SpecFile (mode: $Mode)"
+Write-Host "  Strategy:    $Strategy (candidates: $Candidates)"
 Write-Host "  Agent:       $AgentName"
 Write-Host "  Model:       $ModelTier ($ModelId)"
 Write-Host "  Dir:         $(Get-Location)"
@@ -128,6 +144,78 @@ Write-Host "================================================" -ForegroundColor C
 Write-Host ""
 Write-Host "Launching Claude Code in autonomous mode..." -ForegroundColor Yellow
 Write-Host ""
+
+# --- Build PlanSearch instructions (ATLAS Pattern) ---
+$PlanSearchInstructions = ""
+if ($Candidates -gt 1) {
+    $PlanSearchInstructions = @"
+
+## PLANSEARCH — Multi-Candidate Planning (ATLAS Pattern)
+
+**Before writing ANY code**, generate $Candidates DIFFERENT solution plans:
+
+### For each plan, document in ``.autocode-state/plans/``:
+1. **Approach**: High-level strategy (1-2 sentences)
+2. **Trade-offs**: What this approach gains vs. what it sacrifices
+3. **Complexity**: Estimated number of files/functions to change
+4. **Risk**: What could go wrong (low/medium/high)
+
+### Selection protocol:
+1. Score each plan on 3 axes (1-5 scale):
+   - **Correctness likelihood**: How confident are you this will pass all tests?
+   - **Simplicity**: How minimal is the change?
+   - **Performance**: Will this scale well?
+2. Pick the plan with the highest total score
+3. Log your selection rationale in ``.autocode-state/plans/selection.md``
+4. Implement ONLY the winning plan
+
+### If the winning plan fails after 2 attempts:
+- Do NOT patch it blindly
+- Switch to the next-highest-scoring plan
+- Log: "Plan A failed because [reason], switching to Plan B"
+
+**CRITICAL: Generate plans BEFORE touching any code. Plans must be meaningfully different approaches, not variations of the same idea.**
+"@
+}
+
+# --- Build PR-CoT instructions (ATLAS Pattern) ---
+$PRCoTInstructions = ""
+if ($Strategy -eq "resilient") {
+    $PRCoTInstructions = @"
+
+## PR-CoT — Plan-Repair Chain of Thought (ATLAS Pattern)
+
+**Activated automatically when you fail 2+ times on the same issue.**
+
+When normal fix-and-retry isn't working, STOP and switch to structured repair:
+
+### Step A: DIAGNOSE (don't fix yet)
+Write your OWN test cases for the failing module — independent of existing tests.
+Run them to isolate the exact failure point.
+
+### Step B: MULTI-PERSPECTIVE ANALYSIS
+Analyze the failure from exactly 3 angles:
+1. **Logic error**: Is the algorithm/business logic correct? Trace the data flow manually.
+2. **Integration error**: Are the interfaces, types, or contracts between modules wrong?
+3. **Assumption error**: Am I misunderstanding the requirement or the existing code?
+
+For each perspective, write a 1-sentence hypothesis in ``.autocode-state/repair-log.md``.
+
+### Step C: TARGETED FIX
+- Test the most likely hypothesis FIRST (don't shotgun)
+- If hypothesis confirmed -> fix it
+- If hypothesis rejected -> try next perspective
+
+### Step D: APPROACH PIVOT
+If ALL 3 perspectives fail to identify the issue:
+- The current approach is fundamentally wrong
+- ``git checkout -- .`` to discard ALL changes from this attempt
+- Start fresh with a COMPLETELY different approach
+- Log: "Pivoting: original approach [X] failed because [reason], new approach: [Y]"
+
+**CRITICAL: PR-CoT is about understanding WHY you're failing, not trying harder at the same thing.**
+"@
+}
 
 # --- Build metric instructions ---
 $MetricInstructions = ""
@@ -223,6 +311,8 @@ You are operating in FULLY AUTONOMOUS **exploration mode**. You have a research 
 ## PROGRAM (Research Direction):
 
 $SpecContent
+$PlanSearchInstructions
+$PRCoTInstructions
 $MetricInstructions
 $TimeInstructions
 "@
@@ -275,6 +365,8 @@ You are operating in FULLY AUTONOMOUS mode. Read the spec below and execute the 
 ## SPEC:
 
 $SpecContent
+$PlanSearchInstructions
+$PRCoTInstructions
 $MetricInstructions
 $TimeInstructions
 "@

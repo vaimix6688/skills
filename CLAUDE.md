@@ -195,6 +195,35 @@ Agent runs ~20-100 experiments autonomously, keeping improvements and discarding
 - **Experiment log**: all iterations (kept + discarded) logged in `.autocode-state/experiment-log.md`
 - **Auto-detect**: files named `program*.md` auto-switch to program mode
 
+### Execution Strategies (ATLAS-inspired)
+
+Use `--strategy` to control how AutoCode approaches the task:
+
+| Strategy | Behavior | When to use |
+|---|---|---|
+| `standard` | Single attempt, fix-and-retry on failure | Simple features, bug fixes (default) |
+| `plansearch` | Generate k candidate plans, score & rank, implement best | Complex features, ambiguous specs |
+| `resilient` | PlanSearch + PR-CoT self-repair on repeated failures | Critical code, high-risk changes |
+| `explore` | Program mode + metric-driven keep/discard | Performance optimization, research |
+
+**PlanSearch** (inspired by ATLAS): before writing code, agent generates N different solution plans, scores each on correctness/simplicity/performance, and implements only the winning plan. If it fails, switches to next-best plan instead of patching blindly.
+
+**PR-CoT** (Plan-Repair Chain of Thought): when fix-and-retry fails 2+ times, agent stops and analyzes from 3 perspectives (logic error, integration error, assumption error), writes its own diagnostic tests, and pivots to a completely different approach if needed.
+
+```bash
+# Standard (v1 behavior, default)
+./autocode.sh /repo spec.md
+
+# PlanSearch — 3 candidate plans, pick best
+./autocode.sh /repo spec.md --strategy plansearch
+
+# Resilient — PlanSearch + structured self-repair
+./autocode.sh /repo spec.md --strategy resilient --candidates 5
+
+# Explore — metric-driven optimization
+./autocode.sh /repo program.md --strategy explore --metric "npm run bench | tail -1"
+```
+
 ### Token Optimization Stack
 ```
 Repomix (static)  → pack codebase ~70% compression

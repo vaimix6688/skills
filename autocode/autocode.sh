@@ -8,6 +8,8 @@
 #   ./autocode.sh /path/to/myproject-ai spec.md --agent backend-architect
 #   ./autocode.sh . spec.md --max-retries 5 --max-cost 10
 #   ./autocode.sh . program.md --mode program --metric "npm test -- --coverage"
+#   ./autocode.sh . spec.md --strategy plansearch --candidates 3
+#   ./autocode.sh . spec.md --strategy resilient
 # =============================================================================
 
 set -euo pipefail
@@ -35,6 +37,8 @@ INPUT_MODE="${INPUT_MODE:-spec}"
 METRIC_CMD="${METRIC_CMD:-}"
 METRIC_DIRECTION="${METRIC_DIRECTION:-lower_is_better}"
 MAX_TIME_PER_ITERATION="${MAX_TIME_PER_ITERATION:-300}"
+STRATEGY="${DEFAULT_STRATEGY:-standard}"
+CANDIDATES="${CANDIDATES:-1}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 MODEL_OVERRIDE=""
 
@@ -50,6 +54,8 @@ while [[ $# -gt 0 ]]; do
     --metric) METRIC_CMD="$2"; shift 2 ;;
     --metric-direction) METRIC_DIRECTION="$2"; shift 2 ;;
     --time-budget) MAX_TIME_PER_ITERATION="$2"; shift 2 ;;
+    --strategy) STRATEGY="$2"; shift 2 ;;
+    --candidates) CANDIDATES="$2"; shift 2 ;;
     *) echo "Unknown arg: $1"; exit 1 ;;
   esac
 done
@@ -58,6 +64,19 @@ done
 if [[ "$SPEC_FILE" == *"program"* ]] && [ "$INPUT_MODE" = "spec" ]; then
   INPUT_MODE="program"
 fi
+
+# --- Strategy implies settings ---
+case "$STRATEGY" in
+  plansearch)
+    [ "$CANDIDATES" -eq 1 ] && CANDIDATES=3
+    ;;
+  resilient)
+    [ "$CANDIDATES" -eq 1 ] && CANDIDATES=3
+    ;;
+  explore)
+    INPUT_MODE="program"
+    ;;
+esac
 
 # --- Colors ---
 RED='\033[0;31m'
@@ -173,6 +192,74 @@ Each iteration (analyze → code → test → evaluate) must complete within **$
 - Prioritize fast feedback: prefer unit tests over integration tests within time budget"
 fi
 
+# --- Build PlanSearch instructions (ATLAS Pattern) ---
+PLANSEARCH_INSTRUCTIONS=""
+if [ "$CANDIDATES" -gt 1 ]; then
+  PLANSEARCH_INSTRUCTIONS="
+## PLANSEARCH — Multi-Candidate Planning (ATLAS Pattern)
+
+**Before writing ANY code**, generate ${CANDIDATES} DIFFERENT solution plans:
+
+### For each plan, document in \`.autocode-state/plans/\`:
+1. **Approach**: High-level strategy (1-2 sentences)
+2. **Trade-offs**: What this approach gains vs. what it sacrifices
+3. **Complexity**: Estimated number of files/functions to change
+4. **Risk**: What could go wrong (low/medium/high)
+
+### Selection protocol:
+1. Score each plan on 3 axes (1-5 scale):
+   - **Correctness likelihood**: How confident are you this will pass all tests?
+   - **Simplicity**: How minimal is the change?
+   - **Performance**: Will this scale well?
+2. Pick the plan with the highest total score
+3. Log your selection rationale in \`.autocode-state/plans/selection.md\`
+4. Implement ONLY the winning plan
+
+### If the winning plan fails after 2 attempts:
+- Do NOT patch it blindly
+- Switch to the next-highest-scoring plan
+- Log: \"Plan A failed because [reason], switching to Plan B\"
+
+**CRITICAL: Generate plans BEFORE touching any code. Plans must be meaningfully different approaches, not variations of the same idea.**"
+fi
+
+# --- Build PR-CoT instructions (ATLAS Pattern) ---
+PRCOT_INSTRUCTIONS=""
+if [ "$STRATEGY" = "resilient" ]; then
+  PRCOT_INSTRUCTIONS="
+## PR-CoT — Plan-Repair Chain of Thought (ATLAS Pattern)
+
+**Activated automatically when you fail 2+ times on the same issue.**
+
+When normal fix-and-retry isn't working, STOP and switch to structured repair:
+
+### Step A: DIAGNOSE (don't fix yet)
+Write your OWN test cases for the failing module — independent of existing tests.
+Run them to isolate the exact failure point.
+
+### Step B: MULTI-PERSPECTIVE ANALYSIS
+Analyze the failure from exactly 3 angles:
+1. **Logic error**: Is the algorithm/business logic correct? Trace the data flow manually.
+2. **Integration error**: Are the interfaces, types, or contracts between modules wrong?
+3. **Assumption error**: Am I misunderstanding the requirement or the existing code?
+
+For each perspective, write a 1-sentence hypothesis in \`.autocode-state/repair-log.md\`.
+
+### Step C: TARGETED FIX
+- Test the most likely hypothesis FIRST (don't shotgun)
+- If hypothesis confirmed → fix it
+- If hypothesis rejected → try next perspective
+
+### Step D: APPROACH PIVOT
+If ALL 3 perspectives fail to identify the issue:
+- The current approach is fundamentally wrong
+- \`git checkout -- .\` to discard ALL changes from this attempt
+- Start fresh with a COMPLETELY different approach
+- Log: \"Pivoting: original approach [X] failed because [reason], new approach: [Y]\"
+
+**CRITICAL: PR-CoT is about understanding WHY you're failing, not trying harder at the same thing.**"
+fi
+
 if [ "$INPUT_MODE" = "program" ]; then
   # --- Program mode (exploratory, Karpathy-style) ---
   AUTONOMOUS_PROMPT="$(cat <<'PROMPT_EOF'
@@ -283,10 +370,12 @@ fi
 # Replace placeholder
 AUTONOMOUS_PROMPT="${AUTONOMOUS_PROMPT//MAX_RETRIES_PLACEHOLDER/$MAX_RETRIES}"
 
-# Append metric and time instructions if configured
+# Append all instruction sections
 AUTONOMOUS_PROMPT="$AUTONOMOUS_PROMPT
 
 $INPUT_CONTENT
+$PLANSEARCH_INSTRUCTIONS
+$PRCOT_INSTRUCTIONS
 $METRIC_INSTRUCTIONS
 $TIME_INSTRUCTIONS"
 
@@ -296,6 +385,7 @@ log "${BLUE}  $PROJECT_NAME AutoCode v2.0${NC}"
 log "${BLUE}========================================${NC}"
 log "  Repo:        $REPO_PATH"
 log "  Input:       $SPEC_FILE (mode: $INPUT_MODE)"
+log "  Strategy:    $STRATEGY (candidates: $CANDIDATES)"
 log "  Agent:       $AGENT_NAME"
 log "  Model:       $MODEL_TIER ($MODEL_ID)"
 log "  State:       $SPEC_STATE_DIR"
