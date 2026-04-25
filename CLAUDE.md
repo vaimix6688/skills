@@ -42,6 +42,14 @@ skills/
 │   └── headroom/                 # Dynamic context compression
 └── docs/                         # Development lifecycle templates
     ├── guidelines/               # Coding standards, testing, git, security
+    │   ├── AI_AGENT_BASELINE.md      # Universal AI agent behavior rules (Karpathy + Universal Protocol + Rune)
+    │   ├── INVARIANTS_TEMPLATE.md    # Hard invariants registry template (logic-guardian pattern)
+    │   ├── coding-standards.md
+    │   ├── testing-strategy.md
+    │   ├── git-workflow.md
+    │   ├── security-guidelines.md
+    │   ├── bug-fix-process.md
+    │   └── release-process.md
     ├── ci/                       # CI/CD pipeline templates (Go, Rust, TS, Python)
     ├── configs/                  # Linter configs, Makefiles, docker-compose
     ├── templates/                # PR, bug report, feature request templates
@@ -49,6 +57,32 @@ skills/
     ├── onboarding/               # New developer setup guide
     └── checklist/                # Software dev lifecycle checklist
 ```
+
+## AI Agent Discipline Layer (NEW v1.1 — 2026-04-25)
+
+Three-layer discipline system, applied per task complexity:
+
+| Layer | File | When to apply |
+|-------|------|---------------|
+| **L1 Universal** | [docs/guidelines/AI_AGENT_BASELINE.md §1](docs/guidelines/AI_AGENT_BASELINE.md) — Karpathy 4 principles | Always (every project, every task) |
+| **L2 Code Discipline** | [AI_AGENT_BASELINE.md §2](docs/guidelines/AI_AGENT_BASELINE.md) — Universal Engineering Task Protocol (5-section + PACE-lite) | Code edits with test suite. Skip for doc-only edits. |
+| **L3 Hard Invariants** | [docs/guidelines/INVARIANTS_TEMPLATE.md](docs/guidelines/INVARIANTS_TEMPLATE.md) — copy → `<project>/docs/INVARIANTS.md`, fill domain rules | Large project with core modules + financial / state-machine / audit critical paths |
+
+**Reference pattern** in project root `CLAUDE.md`:
+
+```markdown
+## AI Agent Baseline
+
+Follows [AI_AGENT_BASELINE.md](D:/Code/skills/docs/guidelines/AI_AGENT_BASELINE.md):
+- L1 Karpathy 4 principles — always
+- L2 Universal Protocol — for code edits in `<paths>` (skip `docs/`)
+- L3 INVARIANTS — see [docs/INVARIANTS.md](./docs/INVARIANTS.md)
+```
+
+**Sources distilled:**
+- [forrestchang/andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills) — 86k★ behavioral rules
+- Universal Engineering Task Protocol (Telegram-circulated, VN community)
+- [rune-kit/rune](https://github.com/rune-kit/rune) — 5-layer mesh, INVARIANTS pattern, workflow chains
 
 ## Skills Catalog (28 skills)
 
