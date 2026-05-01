@@ -155,9 +155,27 @@ Project có sub-agents (Explore, Plan, etc.) → invoke trước khi tự làm:
 
 Không "mentally apply" — invoke thật để có dedicated context window.
 
+## §4 · AI Session Management (Handoff Workflow)
+
+Đối với các dự án lớn (Monorepo/Multi-services), AI có nguy cơ mất ngữ cảnh (context) khi làm việc trong thời gian dài hoặc chuyển đổi giữa các task. Để giải quyết, hãy thiết lập **Session Handoff**:
+
+### 4.1 Local `.ai-sessions` in Active Repos
+- **KHÔNG** lưu tập trung ở Workspace/Root Folder của toàn bộ hệ sinh thái.
+- **BẮT BUỘC** mỗi repository con (VD: `frontend-app`, `backend-api`) phải có thư mục `.ai-sessions/` riêng lẻ để đảm bảo bảo mật mã nguồn và phân quyền.
+
+### 4.2 End of Session (Kết thúc ca làm việc)
+- Tự động sinh hoặc cập nhật file `SESSION_SUMMARY_<date>.md` tại `.ai-sessions/` của repo hiện tại.
+- Ghi chú rõ: Task đang in-progress, Invariants bị ảnh hưởng, bug đang fix.
+- (Xem mẫu: `templates/ai-session-summary.md`)
+
+### 4.3 Start of Session (Bắt đầu ca làm việc)
+- User sẽ dùng prompt mồi để AI đọc lại `CLAUDE.md` và `SESSION_SUMMARY`.
+- Tự động xác định lại Persona (Frontend, Backend, BA...) trước khi nhận lệnh mới.
+- (Xem mẫu: `templates/ai-session-prompt.txt`)
+
 ---
 
-## §4 · Anti-Patterns (always avoid)
+## §5 · Anti-Patterns (always avoid)
 
 - ❌ "Let me also clean up while I'm here" (vi phạm Surgical Changes).
 - ❌ Add config/flag/abstraction for hypothetical future need.
@@ -171,7 +189,7 @@ Không "mentally apply" — invoke thật để có dedicated context window.
 
 ---
 
-## §5 · How to Reference From Project CLAUDE.md
+## §6 · How to Reference From Project CLAUDE.md
 
 Trong `<project>/CLAUDE.md`:
 
@@ -187,8 +205,9 @@ This project follows [AI_AGENT_BASELINE.md](D:/Code/skills/docs/guidelines/AI_AG
 
 ---
 
-## §6 · Changelog
+## §7 · Changelog
 
 | Date | Version | Change |
 |------|---------|--------|
 | 2026-04-25 | v1.0 | Initial — distill Karpathy + Universal Protocol + Rune patterns |
+| 2026-04-28 | v1.1 | Bổ sung quy trình AI Session Management (Handoff) phân tán theo repo |

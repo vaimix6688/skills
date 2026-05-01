@@ -1,0 +1,20 @@
+============================================================
+  PROMPT CHO SESSION MỚI (DÀNH CHO REPO HIỆN TẠI)
+============================================================
+
+Copy và paste đoạn lệnh dưới đây vào AI Agent khi bắt đầu ca làm việc mới:
+
+------------------------------------------------------------
+Hãy "catch up" với repo hiện tại của dự án.
+
+1. Đọc file `CLAUDE.md` (hoặc tài liệu hướng dẫn tương đương) ở thư mục gốc của repo này để hiểu các bộ quy tắc (Invariants/Rules) đang được áp dụng.
+2. Đọc file tóm tắt gần nhất trong thư mục `.ai-sessions/` của repo hiện tại.
+
+Sau khi đã nạp đủ context, hãy phản hồi ngắn gọn:
+1. Bạn đang đóng vai trò Agent Persona nào (Backend, Frontend, BA...)?
+2. Task nào đang dang dở (in-progress) theo file summary?
+3. Invariant (I-xx) hoặc rule nào chúng ta cần phải chú ý khi làm task này?
+4. Task nào chúng ta sẽ thực hiện tiếp theo?
+
+Khi đã sẵn sàng, hãy trả lời: "Đã rõ ngữ cảnh, mời bạn ra lệnh tiếp theo!".
+------------------------------------------------------------
