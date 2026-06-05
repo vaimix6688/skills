@@ -187,3 +187,84 @@ S01-rbac-audit.spec.md               # Security
 5. **No overlap** — check existing specs first, reference rather than duplicate
 6. **Convention-aware** — match the project's existing patterns and naming
 7. **Dependency-explicit** — list all specs and modules this depends on
+
+## 🧠 Brainstorming Before Spec (Design First)
+
+**HARD GATE: Do NOT write the spec until you've explored the idea and gotten approval.**
+
+### The Process
+1. **Explore project context** — check files, docs, recent commits
+2. **Assess scope** — if request describes multiple independent subsystems, flag immediately
+3. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria
+4. **Propose 2-3 approaches** — with trade-offs and your recommendation
+5. **Present design** — in sections scaled to complexity, get user approval
+6. **THEN write the spec** — only after design is validated
+
+### Scope Decomposition
+If the project is too large for a single spec:
+- Help decompose into sub-projects: what are the independent pieces?
+- How do they relate? What order should they be built?
+- Each sub-project gets its own spec → plan → implementation cycle
+- **Target: 1-3 days of implementation per spec** — if >15 rules, break into sub-specs
+
+### Key Principles
+- **One question at a time** — don't overwhelm with multiple questions
+- **Multiple choice preferred** — easier to answer than open-ended
+- **YAGNI ruthlessly** — remove unnecessary features from all designs
+- **Explore alternatives** — always propose 2-3 approaches before settling
+- **Incremental validation** — present design, get approval before writing spec
+
+## ✅ Spec Self-Review Checklist
+
+After writing the spec, review with fresh eyes:
+
+1. **Placeholder scan:** Any "TBD", "TODO", incomplete sections, or vague requirements? Fix them.
+2. **Internal consistency:** Do any sections contradict each other? Does the architecture match the feature descriptions?
+3. **Scope check:** Is this focused enough for a single implementation plan, or does it need decomposition?
+4. **Ambiguity check:** Could any requirement be interpreted two different ways? If so, pick one and make it explicit.
+5. **Completeness check:**
+   - [ ] Every RULE is independently testable (clear pass/fail)
+   - [ ] Input/Output schemas use concrete types (not "object" or "any")
+   - [ ] Error codes are unique and documented
+   - [ ] Test cases cover: happy path, validation errors, business rule violations, auth failures
+   - [ ] File structure matches the project's existing module pattern
+   - [ ] No ambiguity — another AI agent could implement without clarification
+
+Fix issues inline. No need to re-review — just fix and move on.
+
+## 📋 Implementation Planning Bridge
+
+After the spec is approved, create a bite-sized implementation plan:
+
+### Plan Document Header
+```markdown
+# [Feature Name] Implementation Plan
+
+**Goal:** [One sentence]
+**Architecture:** [2-3 sentences about approach]
+**Tech Stack:** [Key technologies/libraries]
+```
+
+### Task Granularity (2-5 minutes each)
+```markdown
+### Task N: [Component Name]
+
+**Files:**
+- Create: `exact/path/to/file.py`
+- Modify: `exact/path/to/existing.py:123-145`
+- Test: `tests/exact/path/to/test.py`
+
+- [ ] Step 1: Write the failing test
+- [ ] Step 2: Run test to verify it fails
+- [ ] Step 3: Write minimal implementation
+- [ ] Step 4: Run test to verify it passes
+- [ ] Step 5: Commit
+```
+
+### No Placeholders in Plans
+These are **plan failures** — never write them:
+- "TBD", "TODO", "implement later"
+- "Add appropriate error handling"
+- "Write tests for the above" (without actual test code)
+- "Similar to Task N" (repeat the code)
+- Steps that describe WHAT without showing HOW (code blocks required)

@@ -516,6 +516,110 @@ The following agents are available for orchestration based on task requirements:
 
 ---
 
+## 🧩 Subagent-Driven Development Pattern
+
+Execute implementation plans by dispatching a **fresh subagent per task**, with **two-stage review** after each: spec compliance first, then code quality.
+
+### Why Fresh Subagents?
+- **Isolated context** per task — no confusion from previous work
+- **Precise instructions** — you construct exactly what each subagent needs
+- **Preserved coordinator context** — your own context stays clean for coordination
+- **Parallel-safe** — subagents don't interfere with each other
+
+### The Flow
+```
+For each task in plan:
+  1. Dispatch implementer subagent (with full task text + context)
+  2. Handle status:
+     - DONE → proceed to review
+     - NEEDS_CONTEXT → provide info, re-dispatch
+     - BLOCKED → assess and escalate
+  3. Dispatch spec compliance reviewer
+     - ✅ → proceed to code quality
+     - ❌ → implementer fixes, re-review
+  4. Dispatch code quality reviewer
+     - ✅ → mark task complete
+     - ❌ → implementer fixes, re-review
+  5. Move to next task (no human check-in between tasks)
+
+After all tasks: dispatch final code reviewer for entire implementation
+```
+
+### Model Selection for Subagents
+| Task Complexity | Model Tier | Signals |
+|----------------|------------|---------|
+| Mechanical (1-2 files, clear spec) | Budget/Standard | Isolated function, complete spec |
+| Integration (multi-file, patterns) | Standard | Cross-file coordination needed |
+| Architecture (design judgment) | Premium | Broad codebase understanding |
+
+### Implementer Status Handling
+| Status | Action |
+|--------|--------|
+| **DONE** | Proceed to spec compliance review |
+| **DONE_WITH_CONCERNS** | Read concerns, address if about correctness, note if observational |
+| **NEEDS_CONTEXT** | Provide missing context, re-dispatch |
+| **BLOCKED** | 1) More context → re-dispatch. 2) Needs more reasoning → upgrade model. 3) Task too large → decompose. 4) Plan wrong → escalate to human |
+
+### Red Flags
+- **Never** skip reviews (spec compliance OR code quality)
+- **Never** dispatch multiple implementation subagents in parallel (conflicts)
+- **Never** start code quality review before spec compliance is ✅
+- **Never** move to next task while either review has open issues
+- **Never** let implementer self-review replace actual review (both needed)
+
+---
+
+## ⚡ Parallel Agent Dispatch Pattern
+
+When facing **2+ independent tasks** that can be worked on without shared state or sequential dependencies, dispatch one agent per independent problem domain.
+
+### When to Use
+- 3+ test files failing with different root causes
+- Multiple subsystems broken independently
+- Each problem can be understood without context from others
+- No shared state between investigations
+
+### When NOT to Use
+- Failures are related (fix one might fix others)
+- Need to understand full system state first
+- Agents would interfere (editing same files, using same resources)
+- Exploratory debugging (don't know what's broken yet)
+
+### The Pattern
+```markdown
+1. IDENTIFY independent domains
+   - File A tests: Tool approval flow
+   - File B tests: Batch completion behavior
+   - File C tests: Abort functionality
+
+2. CREATE focused agent tasks (each gets):
+   - Specific scope: one test file or subsystem
+   - Clear goal: make these tests pass
+   - Constraints: don't change other code
+   - Expected output: summary of findings and fixes
+
+3. DISPATCH in parallel
+   Agent 1 → Fix agent-tool-abort.test.ts
+   Agent 2 → Fix batch-completion-behavior.test.ts
+   Agent 3 → Fix tool-approval-race-conditions.test.ts
+
+4. REVIEW and integrate
+   - Read each summary
+   - Verify fixes don't conflict
+   - Run full test suite
+   - Integrate all changes
+```
+
+### Agent Prompt Quality Checklist
+- **❌ Too broad:** "Fix all the tests" — agent gets lost
+- **✅ Specific:** "Fix agent-tool-abort.test.ts" — focused scope
+- **❌ No context:** "Fix the race condition" — agent doesn't know where
+- **✅ Context:** Paste the error messages and test names
+- **❌ Vague output:** "Fix it" — you don't know what changed
+- **✅ Specific:** "Return summary of root cause and changes"
+
+---
+
 ## 🚀 Orchestrator Launch Command
 
 **Single Command Pipeline Execution**:

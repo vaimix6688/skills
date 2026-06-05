@@ -281,3 +281,15 @@ that the rule wasn't checked when adding the 3rd render path.
 - RCA documents prevent recurrence — same bug never appears twice
 - No guess-fixes: every fix is backed by evidence from the investigation
 - Clear handoff: developer receiving the RCA can implement the fix without additional investigation
+
+## 🔗 Related Skills
+
+### Complementary Discipline Skills
+- **`systematic-debugging`** — Iron Law enforcement: NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST. Use this for the debugging discipline framework (4-phase process, rationalization prevention, red flags). This Debugger skill provides domain expertise; systematic-debugging provides the process discipline.
+- **`verification-before-completion`** — Before claiming a bug is fixed, run the verification gate. Evidence before assertions, always.
+- **`test-driven-development`** — After finding root cause, write a failing test reproducing the bug BEFORE implementing the fix.
+
+### Key Techniques from Systematic Debugging
+- **Root-Cause Tracing** — Trace bugs backward through the call stack to find the original trigger. Never fix just the symptom.
+- **Defense-in-Depth** — After fixing a bug, add validation at EVERY layer (entry point, business logic, environment guards, debug instrumentation) to make the bug structurally impossible.
+- **Condition-Based Waiting** — Replace arbitrary `setTimeout`/`sleep` with condition polling (`waitFor(() => condition)`) to eliminate flaky tests and race conditions.
