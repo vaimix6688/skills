@@ -64,6 +64,21 @@ These skills are available as Claude Code slash commands when working in this re
 | `agent-bootstrap` | sonnet | Create agent personas/CLAUDE.md through adaptive onboarding |
 | `project-scaffolder` | sonnet | Bootstrap new projects with skills framework |
 
+### ECH Review/Guard Chain (6) — ported from gstack, re-tuned for ECareHome
+> Prompt-level only (no bun/Supabase/iOS/gbrain). Mapped to INVARIANTS I-01..I-17 + Care Teal brand lock + Vietnamese-first admin UX. Closes the "AI output ~30% → ship-ready" gap with a discipline chain, the way gstack does it.
+
+| Agent | Model | Use for |
+|-------|-------|---------|
+| `ech-plan-eng-review` | opus | BEFORE coding: lock architecture/layer/invariants/ADR-need/tests |
+| `ech-pre-merge-review` | sonnet | Two-pass diff review re-tuned for Go/Dart/TS + I-01..I-17 |
+| `ech-design-review` | sonnet | Frontend AI-slop + Care Teal token lock + VN admin UX |
+| `ech-done-gate` | sonnet | No-self-done gate: build+test+invariants verified before "done" |
+| `ech-safety-guard` | sonnet | Destructive-command warnings + core/append-only freeze |
+| `ech-retro` | sonnet | Honest session/sprint retro across the ECH multi-repo |
+
+**Recommended chain (Think→Plan→Build→Review→Verify→Ship→Retro):**
+`ech-plan-eng-review` → implement → `ech-pre-merge-review` (+ `ech-design-review` if frontend) → `ech-done-gate` → commit. `ech-safety-guard` active throughout when touching prod/core. `ech-retro` at session end.
+
 ---
 
 ## Magic Keyword Registry
